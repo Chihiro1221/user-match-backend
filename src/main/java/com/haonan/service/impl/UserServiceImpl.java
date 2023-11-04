@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.haonan.constant.UserConstant;
 import com.haonan.exception.BusinessException;
 import com.haonan.exception.ErrorCode;
+import com.haonan.model.dto.UserSearchDto;
 import com.haonan.model.entity.User;
 import com.haonan.service.UserService;
 import com.haonan.mapper.UserMapper;
@@ -145,23 +146,32 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     }
 
     /**
-     * 根据标签查询用户
+     * 根据参数动态搜索用户
      *
-     * @param tags
+     * @param userSearchDto
      * @return
      */
     @Override
-    public List<User> getUsersByTags(List<String> tags) {
-        if (CollectionUtils.isEmpty(tags)) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+    public List<User> search(UserSearchDto userSearchDto) {
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        if (userSearchDto != null) {
+            userQueryWrapper.like(StringUtils.isNotBlank(userSearchDto.getNickname()), "nickname", userSearchDto.getNickname());
+
+            if (StringUtils.isNotBlank(userSearchDto.getTagNameList())) {
+                // 将标签字符串拆分为数组
+                String[] tagNameList = userSearchDto.getTagNameList().split(",");
+                for (String tagName : tagNameList) {
+                    userQueryWrapper = userQueryWrapper.like("tags", tagName).or();
+                }
+            }
         }
 
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        for (String tag : tags) {
-            userQueryWrapper = userQueryWrapper.like(StringUtils.isNotBlank(tag), "tags", tag);
-        }
-        List<User> users = userMapper.selectList(userQueryWrapper);
-        return users.stream().map(this::getSafetyUser).collect(Collectors.toList());
+        List<User> userList = userMapper.selectList(userQueryWrapper);
+
+        return userList.stream().map(user -> {
+            user.setPassword(null);
+            return user;
+        }).collect(Collectors.toList());
     }
 }
 

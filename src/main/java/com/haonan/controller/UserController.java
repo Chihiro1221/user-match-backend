@@ -7,6 +7,7 @@ import com.haonan.exception.BusinessException;
 import com.haonan.exception.ErrorCode;
 import com.haonan.model.dto.UserLoginDto;
 import com.haonan.model.dto.UserRegisterDto;
+import com.haonan.model.dto.UserSearchDto;
 import com.haonan.model.entity.User;
 import com.haonan.service.UserService;
 import jakarta.annotation.Resource;
@@ -83,30 +84,21 @@ public class UserController {
     /**
      * 搜索用户
      *
-     * @param nickname
      * @param request
      * @return
      */
     @GetMapping("/search")
-    public BaseResponse<List<User>> search(String nickname, HttpServletRequest request) {
+    public BaseResponse<List<User>> search(UserSearchDto userSearchDto, HttpServletRequest request) {
         // Todo: 封装成一个拦截器
         User loginUser = (User) request.getSession().getAttribute(UserConstant.SESSION_KEY);
         if (loginUser == null) {
             throw new BusinessException(ErrorCode.NO_LOGIN_ERROR);
         }
-        if (loginUser.getRole() != UserConstant.ADMIN) {
+        if (!loginUser.getRole().equals(UserConstant.ADMIN)) {
             throw new BusinessException(ErrorCode.NO_PERMISSION_ERROR);
         }
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        if (!StringUtils.isAnyBlank(nickname)) {
-            userQueryWrapper.like("nickname", nickname);
-        }
-        List<User> userList = userService.list(userQueryWrapper);
-        userList.stream().map(user -> {
-            user.setPassword(null);
-            return user;
-        }).collect(Collectors.toList());
 
+        List<User> userList = userService.search(userSearchDto);
         return BaseResponse.success(userList);
     }
 

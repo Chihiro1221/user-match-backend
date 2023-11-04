@@ -1,5 +1,6 @@
 package com.haonan.service;
 
+import com.haonan.model.dto.UserSearchDto;
 import com.haonan.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,10 +40,7 @@ public interface UserService extends IService<User> {
     User getSafetyUser(User originUser) ;
 
     /**
-     * 根据标签查询用户
-     *
-     * @param tags
-     * @return
+     * 根据条件动态搜索用户
      */
-    List<User> getUsersByTags(List<String> tags);
+    List<User> search(UserSearchDto userSearchDto);
 }
