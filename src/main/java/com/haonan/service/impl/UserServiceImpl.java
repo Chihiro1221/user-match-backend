@@ -6,6 +6,7 @@ import com.haonan.constant.UserConstant;
 import com.haonan.exception.BusinessException;
 import com.haonan.exception.ErrorCode;
 import com.haonan.model.dto.UserSearchDto;
+import com.haonan.model.dto.UserUpdateDto;
 import com.haonan.model.entity.User;
 import com.haonan.service.UserService;
 import com.haonan.mapper.UserMapper;
@@ -13,6 +14,7 @@ import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
@@ -76,7 +78,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         if (count > 0) {
             throw new BusinessException(ErrorCode.PLANET_CODE_EXIST_ERROR);
         }
-        // 密码加密da
+        // 密码加密
         String encryptPassword = DigestUtils.md5DigestAsHex((UserConstant.MD5_SALT + password).getBytes());
         User user = new User();
         user.setUsername(username);
@@ -173,6 +175,51 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             user.setPassword(null);
             return user;
         }).collect(Collectors.toList());
+    }
+
+    /**
+     * 更新用户
+     *
+     * @param userUpdateDto
+     * @param request
+     */
+    @Override
+    public void updateUser(UserUpdateDto userUpdateDto, HttpServletRequest request) {
+        Long userId = userUpdateDto.getId();
+        User originUser = userMapper.selectById(userId);
+        // 要修改的用户不存在
+        if (originUser == null) {
+            throw new BusinessException(ErrorCode.USER_NOT_EXIST_ERROR);
+        }
+        // 如果不是管理员，要修改的用户与当前登录也不一致则报错
+        if (!isAdmin(originUser) && !userUpdateDto.getId().equals(getLoginUser(request).getId())) {
+            throw new BusinessException(ErrorCode.NO_PERMISSION_ERROR);
+        }
+
+        User user = new User();
+        BeanUtils.copyProperties(userUpdateDto, user);
+        userMapper.updateById(user);
+    }
+
+    /**
+     * 是否为管理员
+     *
+     * @param user
+     * @return
+     */
+    @Override
+    public boolean isAdmin(User user) {
+        return user.getRole() == UserConstant.ADMIN;
+    }
+
+    /**
+     * 获取当前登录用户
+     * @param request
+     * @return
+     */
+    @Override
+    public User getLoginUser(HttpServletRequest request) {
+        return (User) request.getSession().getAttribute(UserConstant.SESSION_KEY);
     }
 }
 

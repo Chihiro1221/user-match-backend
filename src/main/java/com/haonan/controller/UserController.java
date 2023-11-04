@@ -8,10 +8,12 @@ import com.haonan.exception.ErrorCode;
 import com.haonan.model.dto.UserLoginDto;
 import com.haonan.model.dto.UserRegisterDto;
 import com.haonan.model.dto.UserSearchDto;
+import com.haonan.model.dto.UserUpdateDto;
 import com.haonan.model.entity.User;
 import com.haonan.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -22,7 +24,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/user")
 @Slf4j
-@CrossOrigin(origins = "http://localhost:5173")
+@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class UserController {
     @Resource
     private UserService userService;
@@ -124,6 +126,20 @@ public class UserController {
         if (result != true) {
             throw new BusinessException(ErrorCode.CLIENT_ERROR, "删除用户失败！");
         }
+        return BaseResponse.success();
+    }
+
+    /**
+     * 更新用户信息
+     *
+     * @return
+     */
+    @PutMapping("/update")
+    public BaseResponse updateUser(@RequestBody @Valid UserUpdateDto userUpdateDto, HttpServletRequest request) {
+        if (userUpdateDto == null) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+        userService.updateUser(userUpdateDto, request);
         return BaseResponse.success();
     }
 }
