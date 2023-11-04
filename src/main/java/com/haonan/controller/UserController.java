@@ -22,6 +22,7 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/user")
 @Slf4j
+@CrossOrigin(origins = "http://localhost:5173")
 public class UserController {
     @Resource
     private UserService userService;
@@ -90,13 +91,13 @@ public class UserController {
     @GetMapping("/search")
     public BaseResponse<List<User>> search(UserSearchDto userSearchDto, HttpServletRequest request) {
         // Todo: 封装成一个拦截器
-        User loginUser = (User) request.getSession().getAttribute(UserConstant.SESSION_KEY);
-        if (loginUser == null) {
-            throw new BusinessException(ErrorCode.NO_LOGIN_ERROR);
-        }
-        if (!loginUser.getRole().equals(UserConstant.ADMIN)) {
-            throw new BusinessException(ErrorCode.NO_PERMISSION_ERROR);
-        }
+//        User loginUser = (User) request.getSession().getAttribute(UserConstant.SESSION_KEY);
+//        if (loginUser == null) {
+//            throw new BusinessException(ErrorCode.NO_LOGIN_ERROR);
+//        }
+//        if (!loginUser.getRole().equals(UserConstant.ADMIN)) {
+//            throw new BusinessException(ErrorCode.NO_PERMISSION_ERROR);
+//        }
 
         List<User> userList = userService.search(userSearchDto);
         return BaseResponse.success(userList);

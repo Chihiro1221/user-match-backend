@@ -92,6 +92,11 @@ public class User implements Serializable {
      */
     private String tags;
 
+    /**
+     * 用户简介
+     */
+    private String introduction;
+
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

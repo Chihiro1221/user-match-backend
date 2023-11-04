@@ -142,6 +142,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setRole(originUser.getRole());
         user.setPlanetCode(originUser.getPlanetCode());
         user.setTags(originUser.getTags());
+        user.setIntroduction(originUser.getIntroduction());
         return user;
     }
 

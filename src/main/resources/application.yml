@@ -1,4 +1,3 @@
-
 spring:
   profiles:
     active: dev
@@ -9,11 +8,17 @@ spring:
     username: root
     password: youzhi..
     url: jdbc:mysql://localhost:3306/user-center
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
 server:
   port: 8080
   servlet:
     session:
       timeout: 86400
+      store-type: redis
 springdoc:
   swagger-ui:
     path: /swagger-ui.html

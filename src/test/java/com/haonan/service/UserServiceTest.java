@@ -1,6 +1,7 @@
 package com.haonan.service;
 
 import com.haonan.mapper.UserMapper;
+import com.haonan.model.dto.UserSearchDto;
 import com.haonan.model.entity.User;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;
@@ -80,8 +81,10 @@ class UserServiceTest {
 
     @Test
     void getUsersByTags() {
-        List<String> tags = Arrays.asList("java", "c++");
-        List<User> usersByTags = userService.getUsersByTags(tags);
+        String tags = "java,c++";
+        UserSearchDto userSearchDto = new UserSearchDto();
+        userSearchDto.setTagNameList(tags);
+        List<User> usersByTags = userService.search(userSearchDto);
         Assertions.assertFalse(CollectionUtils.isEmpty(usersByTags));
         System.out.println(usersByTags);
     }
