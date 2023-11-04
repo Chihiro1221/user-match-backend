@@ -6,6 +6,11 @@ import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.util.CollectionUtils;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @SpringBootTest
 class UserServiceTest {
@@ -35,11 +40,11 @@ class UserServiceTest {
         String password = "youzhi..";
         String passwordConfirmation = "youzhi..";
         String planetCode = "12345";
-        long result = userService.register(username, password, passwordConfirmation,planetCode );
+        long result = userService.register(username, password, passwordConfirmation, planetCode);
         Assertions.assertEquals(-1, result);
 
         username = "hn";
-        result = userService.register(username, password, passwordConfirmation,planetCode );
+        result = userService.register(username, password, passwordConfirmation, planetCode);
         Assertions.assertEquals(-1, result);
 
         username = "haonan123";
@@ -71,5 +76,13 @@ class UserServiceTest {
     void login() {
 //        int result = userService.login("haonan2", "youzhi..", getcon);
 //        System.out.println("result = " + result);
+    }
+
+    @Test
+    void getUsersByTags() {
+        List<String> tags = Arrays.asList("java", "c++");
+        List<User> usersByTags = userService.getUsersByTags(tags);
+        Assertions.assertFalse(CollectionUtils.isEmpty(usersByTags));
+        System.out.println(usersByTags);
     }
 }

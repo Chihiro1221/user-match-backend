@@ -4,6 +4,8 @@ import com.haonan.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
 import jakarta.servlet.http.HttpServletRequest;
 
+import java.util.List;
+
 /**
  * @author wanghaonan
  * @description 针对表【user(用户表)】的数据库操作Service
@@ -35,4 +37,12 @@ public interface UserService extends IService<User> {
      * @return
      */
     User getSafetyUser(User originUser) ;
+
+    /**
+     * 根据标签查询用户
+     *
+     * @param tags
+     * @return
+     */
+    List<User> getUsersByTags(List<String> tags);
 }

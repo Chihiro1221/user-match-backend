@@ -13,10 +13,13 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
+import org.springframework.util.CollectionUtils;
 import org.springframework.util.DigestUtils;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * @author wanghaonan
@@ -137,7 +140,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         user.setCreateTime(originUser.getCreateTime());
         user.setRole(originUser.getRole());
         user.setPlanetCode(originUser.getPlanetCode());
+        user.setTags(originUser.getTags());
         return user;
+    }
+
+    /**
+     * 根据标签查询用户
+     *
+     * @param tags
+     * @return
+     */
+    @Override
+    public List<User> getUsersByTags(List<String> tags) {
+        if (CollectionUtils.isEmpty(tags)) {
+            throw new BusinessException(ErrorCode.PARAMS_ERROR);
+        }
+
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        for (String tag : tags) {
+            userQueryWrapper = userQueryWrapper.like(StringUtils.isNotBlank(tag), "tags", tag);
+        }
+        List<User> users = userMapper.selectList(userQueryWrapper);
+        return users.stream().map(this::getSafetyUser).collect(Collectors.toList());
     }
 }
 
