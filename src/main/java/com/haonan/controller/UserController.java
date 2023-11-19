@@ -1,14 +1,12 @@
 package com.haonan.controller;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.haonan.common.BaseResponse;
 import com.haonan.constant.UserConstant;
 import com.haonan.exception.BusinessException;
 import com.haonan.exception.ErrorCode;
-import com.haonan.model.dto.UserLoginDto;
-import com.haonan.model.dto.UserRegisterDto;
-import com.haonan.model.dto.UserSearchDto;
-import com.haonan.model.dto.UserUpdateDto;
+import com.haonan.model.dto.*;
 import com.haonan.model.entity.User;
 import com.haonan.service.UserService;
 import jakarta.annotation.Resource;
@@ -84,6 +82,18 @@ public class UserController {
         return BaseResponse.success(safetyUser);
     }
 
+
+    /**
+     * 推荐用户
+     * @param userRecommendDto
+     * @return
+     */
+    @GetMapping("/recommend")
+    public BaseResponse<Page> recommendUsers(UserRecommendDto userRecommendDto, HttpServletRequest request) {
+        Page<User> userPage = userService.recommendUsers(userRecommendDto, request);
+        return BaseResponse.success(userPage);
+    }
+
     /**
      * 搜索用户
      *
@@ -143,3 +153,4 @@ public class UserController {
         return BaseResponse.success();
     }
 }
+

@@ -1,6 +1,7 @@
 package com.haonan.service;
 
-import com.haonan.constant.UserConstant;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.haonan.model.dto.UserRecommendDto;
 import com.haonan.model.dto.UserSearchDto;
 import com.haonan.model.dto.UserUpdateDto;
 import com.haonan.model.entity.User;
@@ -71,4 +72,10 @@ public interface UserService extends IService<User> {
      * @return
      */
     User getLoginUser(HttpServletRequest request);
+
+    /**
+     * 推荐用户
+     * @return
+     */
+    Page<User> recommendUsers(UserRecommendDto userRecommendDto, HttpServletRequest request);
 }
