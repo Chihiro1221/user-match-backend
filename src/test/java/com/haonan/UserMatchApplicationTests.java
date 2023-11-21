@@ -8,7 +8,7 @@ import org.springframework.util.Assert;
 import java.util.List;
 
 @SpringBootTest
-class UserCenterApplicationTests {
+class UserMatchApplicationTests {
 
     @Test
     void contextLoads() {

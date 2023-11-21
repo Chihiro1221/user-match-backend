@@ -2,17 +2,17 @@ spring:
   profiles:
     active: dev
   application:
-    name: user-center
+    name: user-match
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password: youzhi..
-    url: jdbc:mysql://localhost:3306/user-center
+    url: jdbc:mysql://localhost:3306/user-match
   data:
     redis:
       host: localhost
       port: 6379
-      database: 0
+      database: 2
 server:
   port: 8080
   servlet:

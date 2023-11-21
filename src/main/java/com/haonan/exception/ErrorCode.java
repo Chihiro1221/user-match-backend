@@ -5,6 +5,7 @@ public enum ErrorCode {
     USER_NOT_EXIST_ERROR(40001, "用户不存在！"),
     USER_EXIST_ERROR(40002, "用户已存在！"),
     PLANET_CODE_EXIST_ERROR(40003, "星球编号已存在！"),
+    NULL_ERROR(40004, "查询的数据为空！"),
     PARAMS_ERROR(42200, "参数错误！"),
     NO_PERMISSION_ERROR(40300, "没有访问权限！"),
     NO_LOGIN_ERROR(40100, "请您登录！"),

@@ -1,12 +1,16 @@
 package com.haonan.service;
+
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
+import com.google.gson.Gson;
 import com.haonan.mapper.UserMapper;
 import com.haonan.model.entity.User;
 import jakarta.annotation.Resource;
 import org.junit.jupiter.api.Test;
+import org.springframework.boot.json.GsonJsonParser;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.util.StopWatch;
 
@@ -14,9 +18,9 @@ import org.springframework.util.StopWatch;
 public class InsertUsers {
     @Resource
     private UserService userService;
+
     @Test
-    void insertUsers()
-    {
+    void insertUsers() {
         Integer MAX_NUM = 10000;
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -41,9 +45,8 @@ public class InsertUsers {
     }
 
     @Test
-    void concurrentInsertUsers()
-    {
-        Integer MAX_NUM = 10000;
+    void concurrentInsertUsers() {
+        Integer MAX_NUM = 100000;
         StopWatch stopWatch = new StopWatch();
         ArrayList<CompletableFuture<Void>> futureList = new ArrayList<>();
         stopWatch.start();
@@ -60,7 +63,9 @@ public class InsertUsers {
                 user.setPhone("15933371902");
                 user.setEmail("2213595911@qq.com");
                 user.setPlanetCode("5");
-                user.setTags("['java','c++']");
+                Gson gson = new Gson();
+                List<String> tags = List.of("java", "c++", "python");
+                user.setTags(gson.toJson(tags));
                 user.setIntroduction("这里是测试账号");
                 userList.add(user);
             }
