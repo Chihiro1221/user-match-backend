@@ -1,4 +1,3 @@
--- auto-generated definition
 create table user
 (
     id           bigint auto_increment comment 'id'
@@ -20,4 +19,3 @@ create table user
     introduction varchar(512)                       null comment '简介'
 )
     comment '用户表';
-

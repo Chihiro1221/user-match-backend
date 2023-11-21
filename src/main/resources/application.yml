@@ -36,9 +36,9 @@ knife4j:
   enable: true
   setting:
     language: zh_cn
-#logging:
-#  level:
-#    com.haonan: debug
+logging:
+  level:
+    com.haonan: debug
 mybatis-plus:
   global-config:
     db-config:
