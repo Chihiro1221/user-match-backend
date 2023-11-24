@@ -9,6 +9,8 @@ import com.haonan.exception.ErrorCode;
 import com.haonan.model.dto.*;
 import com.haonan.model.entity.Team;
 import com.haonan.model.entity.User;
+import com.haonan.model.vo.PageVo;
+import com.haonan.model.vo.TeamVO;
 import com.haonan.service.TeamService;
 import com.haonan.service.UserService;
 import jakarta.annotation.Resource;
@@ -58,13 +60,9 @@ public class TeamController {
     }
 
     @PutMapping("/{id}")
-    public BaseResponse updateTeam(@PathVariable @NotNull Long id, @RequestBody @Valid @NotNull TeamUpdateDto teamUpdateDto) {
-        Team team = new Team();
-        BeanUtils.copyProperties(teamUpdateDto, team);
-        boolean result = teamService.updateById(team);
-        if (!result) {
-            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新失败");
-        }
+    public BaseResponse updateTeam(@PathVariable @NotNull Long id, @RequestBody @Valid @NotNull TeamUpdateDto teamUpdateDto, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        teamService.updateTeam(id, teamUpdateDto, loginUser);
         return BaseResponse.success();
     }
 
@@ -78,11 +76,18 @@ public class TeamController {
     }
 
     @GetMapping
-    public BaseResponse<Page<Team>> page(TeamPageDto teamPageDto) {
-        QueryWrapper<Team> teamQueryWrapper = new QueryWrapper<>();
-        Page<Team> teamPage = new Page<>(teamPageDto.getPageNum(), teamPageDto.getPageSize());
-        Page<Team> page = teamService.page(teamPage, teamQueryWrapper);
+    public BaseResponse<PageVo<TeamVO>> page(@Valid TeamPageDto teamPageDto, HttpServletRequest request) {
+        // Todo: 设置一个拦截器，在到controller层进行拦截并且将对象设置为线程变量
+        PageVo<TeamVO> page = teamService.pageQuery(teamPageDto, userService.getLoginUser(request));
         return BaseResponse.success(page);
+    }
+
+    @PostMapping("/join")
+    public BaseResponse joinTeam(@RequestBody @Valid TeamJoinDto teamJoinDto, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        teamService.joinTeam(teamJoinDto, loginUser);
+
+        return BaseResponse.success();
     }
 }
 

@@ -1,54 +1,63 @@
-package com.haonan.model.dto;
+package com.haonan.model.vo;
 
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.haonan.enums.TeamStatusEnum;
-import jakarta.annotation.Nullable;
-import jakarta.validation.constraints.*;
+import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
 
 @Data
-public class TeamUpdateDto implements Serializable {
+public class TeamVO implements Serializable {
+    /**
+     * id
+     */
+    private Long id;
+
+    /**
+     * 创建人id
+     */
+    private Long userId;
 
     /**
      * 队伍名
      */
-    @Size(max = 20)
     private String name;
 
     /**
      * 队伍描述
      */
-    @Size(max = 512)
     private String description;
-
-    /**
-     * 队伍密码
-     */
-    @Size(max = 18)
-    private String password;
 
     /**
      * 最大人数
      */
-    @Max(10)
-    @Min(2)
     private Integer maxNum;
 
     /**
      * 状态 0-公开 1-私有 2-加密
      */
-    private TeamStatusEnum status;
+    private Integer status;
 
     /**
      * 过期时间
      */
-    @Future
     private Date expireTime;
 
+    /**
+     * 创建时间
+     */
+    private Date createTime;
+
+    /**
+     * 更新时间
+     */
+    private Date updateTime;
+
+
+    /**
+     * 创建人
+     */
+    private UserVO createUser;
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
-
 }

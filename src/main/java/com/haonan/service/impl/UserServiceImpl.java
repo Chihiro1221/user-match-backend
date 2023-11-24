@@ -226,7 +226,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      */
     @Override
     public User getLoginUser(HttpServletRequest request) {
-        return (User) request.getSession().getAttribute(UserConstant.SESSION_KEY);
+        User loginUser = (User) request.getSession().getAttribute(UserConstant.SESSION_KEY);
+        if (loginUser == null) {
+            throw new BusinessException(ErrorCode.NO_LOGIN_ERROR);
+        }
+        return loginUser;
     }
 
     /**
