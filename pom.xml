@@ -9,10 +9,10 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.haonan</groupId>
-    <artifactId>user-center</artifactId>
+    <artifactId>user-match</artifactId>
     <version>0.0.1-SNAPSHOT</version>
-    <name>user-center</name>
-    <description>user-center</description>
+    <name>user-match</name>
+    <description>user-match</description>
     <properties>
         <java.version>17</java.version>
     </properties>
