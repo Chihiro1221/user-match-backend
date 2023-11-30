@@ -25,7 +25,6 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/user")
 @Slf4j
-@CrossOrigin(origins = "http://localhost:5173", allowCredentials = "true")
 public class UserController {
     @Resource
     private UserService userService;
