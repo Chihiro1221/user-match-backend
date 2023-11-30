@@ -1,7 +1,10 @@
 package com.haonan.mapper;
 
+import com.haonan.model.entity.Team;
 import com.haonan.model.entity.TeamUser;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
+import java.util.List;
 
 /**
 * @author haonan
@@ -11,6 +14,12 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 */
 public interface TeamUserMapper extends BaseMapper<TeamUser> {
 
+    /**
+     * 查询已加入的队伍信息
+     * @param id
+     * @return
+     */
+    List<Team> selectJointedTeam(Long id);
 }
 
 

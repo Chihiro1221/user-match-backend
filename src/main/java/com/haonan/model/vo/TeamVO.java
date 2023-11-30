@@ -5,6 +5,7 @@ import lombok.Data;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 @Data
 public class TeamVO implements Serializable {
@@ -58,6 +59,11 @@ public class TeamVO implements Serializable {
      * 创建人
      */
     private UserVO createUser;
+
+    /**
+     * 已加入队伍的用户id
+     */
+    private List<Long> users;
     @TableField(exist = false)
     private static final long serialVersionUID = 1L;
 }

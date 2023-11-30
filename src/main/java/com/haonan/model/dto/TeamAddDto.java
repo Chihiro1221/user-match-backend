@@ -41,7 +41,7 @@ public class TeamAddDto implements Serializable {
     /**
      * 状态 0-公开 1-私有 2-加密
      */
-    private TeamStatusEnum status;
+    private Integer status;
 
     /**
      * 过期时间

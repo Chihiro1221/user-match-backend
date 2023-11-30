@@ -21,13 +21,13 @@ public class InsertUsers {
 
     @Test
     void insertUsers() {
-        Integer MAX_NUM = 10000;
+        Integer MAX_NUM = 100000;
         StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         ArrayList<User> userList = new ArrayList<>();
         for (int i = 0; i < MAX_NUM; i++) {
             User user = new User();
-            user.setNickname("测试账号");
+            user.setNickname("fake浩楠");
             user.setAvatarUrl("https://heart-sky-take-out.oss-cn-beijing.aliyuncs.com/%E9%B1%BC%E8%81%AA%E6%98%8EAI%E7%BB%98%E7%94%BB%20%281%29.jpeg");
             user.setUsername("test");
             user.setPassword("youzhi..");
@@ -35,8 +35,9 @@ public class InsertUsers {
             user.setPhone("15933371902");
             user.setEmail("2213595911@qq.com");
             user.setPlanetCode("5");
-            user.setTags("['java','c++']");
-            user.setIntroduction("这里是测试账号");
+//            user.setTags("[" + "java" + "," + "c++" + "]");
+            user.setTags(null);
+            user.setIntroduction("测试");
             userList.add(user);
         }
         userService.saveBatch(userList, 2000);
@@ -55,7 +56,7 @@ public class InsertUsers {
             ArrayList<User> userList = new ArrayList<>();
             for (int j = 0; j < MAX_NUM / 10; j++) {
                 User user = new User();
-                user.setNickname("测试账号");
+                user.setNickname("fake浩楠");
                 user.setAvatarUrl("https://heart-sky-take-out.oss-cn-beijing.aliyuncs.com/%E9%B1%BC%E8%81%AA%E6%98%8EAI%E7%BB%98%E7%94%BB%20%281%29.jpeg");
                 user.setUsername("test");
                 user.setPassword("youzhi..");
@@ -64,9 +65,10 @@ public class InsertUsers {
                 user.setEmail("2213595911@qq.com");
                 user.setPlanetCode("5");
                 Gson gson = new Gson();
-                List<String> tags = List.of("java", "c++", "python");
-                user.setTags(gson.toJson(tags));
-                user.setIntroduction("这里是测试账号");
+//                List<String> tags = List.of("java", "c++", "python");
+//                user.setTags(gson.toJson(tags));
+                user.setTags(null);
+                user.setIntroduction("测试账号");
                 userList.add(user);
             }
             CompletableFuture<Void> future = CompletableFuture.runAsync(() -> {

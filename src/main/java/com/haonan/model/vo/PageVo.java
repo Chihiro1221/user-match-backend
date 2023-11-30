@@ -12,8 +12,8 @@ import java.util.List;
 @Data
 public class PageVo<T> {
     List<T> records;
-    Integer total;
-    Integer size;
-    Integer current;
-    Integer pages;
+    Long total;
+    Long size;
+    Long current;
+    Long pages;
 }

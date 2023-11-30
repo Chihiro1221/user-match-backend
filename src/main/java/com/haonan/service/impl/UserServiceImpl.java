@@ -3,26 +3,32 @@ package com.haonan.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.haonan.constant.UserConstant;
+import com.haonan.context.BaseContext;
 import com.haonan.exception.BusinessException;
 import com.haonan.exception.ErrorCode;
 import com.haonan.model.dto.UserRecommendDto;
 import com.haonan.model.dto.UserSearchDto;
 import com.haonan.model.dto.UserUpdateDto;
 import com.haonan.model.entity.User;
+import com.haonan.model.vo.UserVO;
 import com.haonan.service.UserService;
 import com.haonan.mapper.UserMapper;
+import com.haonan.utils.AlgorithmUtils;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.jboss.marshalling.Pair;
 import org.springframework.beans.BeanUtils;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ValueOperations;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
 
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -239,9 +245,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
      * @return
      */
     @Override
-    public Page<User> recommendUsers(UserRecommendDto userRecommendDto, HttpServletRequest request) {
+    public Page<User> recommendUsers(UserRecommendDto userRecommendDto) {
         ValueOperations valueOperations = redisTemplate.opsForValue();
-        User loginUser = getLoginUser(request);
+        User loginUser = BaseContext.getCurrentUser();
         Long userId;
         // 所有未登录的用户id都改为0，这样所有未登录的用户都是使用同一份缓存
         userId = loginUser == null ? 0L : loginUser.getId();
@@ -262,6 +268,52 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
             log.error("redis设置失败：", e);
         }
         return userPage;
+    }
+
+    /**
+     * 推荐相似度最匹配的用户
+     *
+     * @return
+     */
+    @Override
+    public List<UserVO> matchUsers(Integer num) {
+        User currentUser = BaseContext.getCurrentUser();
+        String tags = currentUser.getTags();
+        Gson gson = new Gson();
+        // 将当前用户标签转换为list
+        List<String> tagList = gson.fromJson(tags, new TypeToken<List<String>>() {
+        }.getType());
+        // 查询出所有用户（不包括标签为空、不包括自己、只查询id、tags字段）
+        QueryWrapper<User> queryWrapper = new QueryWrapper();
+        queryWrapper.select("id", "tags");
+        queryWrapper.isNotNull("tags");
+        queryWrapper.ne("id", currentUser.getId());
+        List<User> users = this.list(queryWrapper);
+        List<Pair<Long, Integer>> editDistanceList = new ArrayList<>();
+        // 计算出每一个用户与当前登录用户的标签匹配值，存储到编辑距离数据中
+        for (User user : users) {
+            String userTags = user.getTags();
+            List<String> userTagList = gson.fromJson(userTags, new TypeToken<List<String>>() {
+            }.getType());
+            int score = AlgorithmUtils.minDistance(tagList, userTagList);
+            editDistanceList.add(new Pair<Long, Integer>(user.getId(), score));
+        }
+        // 将编辑距离数组根据分数（分数越小表示编辑距离操作步骤越小，表示越相近）从小到大排序，并取出前num个数据
+        List<Pair<Long, Integer>> topUserPairList = editDistanceList.stream().sorted(Comparator.comparingInt(Pair::getB)).limit(num).toList();
+        // 获取topN用户id
+        List<Long> userIdList = topUserPairList.stream().map(pair -> pair.getA()).toList();
+        queryWrapper = new QueryWrapper();
+        queryWrapper.in("id",userIdList );
+        // 根据id查询出详细的用户信息并封装为vo对象返回出去
+        Map<Long, List<User>> uesrMap = userMapper.selectList(queryWrapper).stream().collect(Collectors.groupingBy(User::getId));
+        ArrayList<UserVO> userVOList = new ArrayList<>();
+        for (Pair<Long, Integer> pair : topUserPairList) {
+            User user = uesrMap.get(pair.getA()).get(0);
+            UserVO userVO = new UserVO();
+            BeanUtils.copyProperties(user, userVO);
+            userVOList.add(userVO);
+        }
+        return userVOList;
     }
 }
 

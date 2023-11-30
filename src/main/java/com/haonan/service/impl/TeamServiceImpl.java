@@ -1,9 +1,11 @@
 package com.haonan.service.impl;
 
+import ch.qos.logback.core.joran.spi.NoAutoStart;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.haonan.constant.UserConstant;
+import com.haonan.context.BaseContext;
 import com.haonan.enums.TeamStatusEnum;
 import com.haonan.exception.BusinessException;
 import com.haonan.exception.ErrorCode;
@@ -122,6 +124,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             // 如果没有设置并且不是管理员则不查询私有队伍
             teamQueryWrapper.ne("status", TeamStatusEnum.PRIVATE.getValue());
         }
+        teamQueryWrapper.orderByDesc("create_time");
         Page<Team> teamPage = new Page<>(teamPageDto.getPageNum(), teamPageDto.getPageSize());
         Page<Team> page = teamMapper.selectPage(teamPage, teamQueryWrapper);
         ArrayList<TeamVO> teamVOList = new ArrayList<>();
@@ -129,6 +132,11 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         BeanUtils.copyProperties(page, teamVOPageVo);
         // 关联查询出队伍创建人信息
         teamVOPageVo.setRecords(page.getRecords().stream().map(team -> {
+            // 关联查询出所有的加入队伍的用户id
+            QueryWrapper<TeamUser> teamUserQueryWrapper = new QueryWrapper<>();
+            teamUserQueryWrapper.select("user_id");
+            teamUserQueryWrapper.eq("team_id", team.getId());
+            List<TeamUser> teamUsers = teamUserMapper.selectList(teamUserQueryWrapper);
             // 查询创建人信息
             Long createUserId = team.getUserId();
             User user = userMapper.selectById(createUserId);
@@ -138,6 +146,7 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
             TeamVO teamVO = new TeamVO();
             BeanUtils.copyProperties(team, teamVO);
             teamVO.setCreateUser(userVO);
+            teamVO.setUsers(teamUsers.stream().map(TeamUser::getUserId).toList());
             return teamVO;
         }).collect(Collectors.toList()));
         return teamVOPageVo;
@@ -184,23 +193,30 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
      * @param loginUser
      */
     @Override
-    public void joinTeam(TeamJoinDto teamJoinDto, User loginUser) {
+    public synchronized void joinTeam(TeamJoinDto teamJoinDto, User loginUser) {
         Team team = teamMapper.selectById(teamJoinDto.getTeamId());
         if (team == null) {
             throw new BusinessException(ErrorCode.NULL_ERROR);
         }
-        // 最多加入5个队伍
+        // 不能加入已满的队伍
         QueryWrapper queryWrapper = new QueryWrapper();
-        queryWrapper.eq("user_id", loginUser.getId());
+        queryWrapper.eq("team_id", teamJoinDto.getTeamId());
         Long count = teamUserMapper.selectCount(queryWrapper);
-        if (count >= 5) {
-            throw new BusinessException(ErrorCode.CLIENT_ERROR, "最多创建和加入5个队伍");
+        if (count >= team.getMaxNum()) {
+            throw new BusinessException(ErrorCode.CLIENT_ERROR, "队伍已满");
         }
         // 不能加入相同的队伍
-        queryWrapper.eq("team_id", teamJoinDto.getTeamId());
+        queryWrapper.eq("user_id", loginUser.getId());
         count = teamUserMapper.selectCount(queryWrapper);
         if (count > 0) {
-            throw new BusinessException(ErrorCode.CLIENT_ERROR, "不能加入已加入的队伍");
+            throw new BusinessException(ErrorCode.CLIENT_ERROR, "不能重复加入");
+        }
+        // 最多加入5个队伍
+        queryWrapper = new QueryWrapper();
+        queryWrapper.eq("user_id", loginUser.getId());
+        count = teamUserMapper.selectCount(queryWrapper);
+        if (count >= 5) {
+            throw new BusinessException(ErrorCode.CLIENT_ERROR, "最多创建和加入5个队伍");
         }
         // 不能加入已过期的队伍
         if (team.getExpireTime().before(new Date())) {
@@ -222,6 +238,148 @@ public class TeamServiceImpl extends ServiceImpl<TeamMapper, Team>
         if (insert < 1) {
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "加入队伍失败");
         }
+    }
+
+    /**
+     * 退出队伍
+     *
+     * @param teamId
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public synchronized void quitTeam(Long teamId) {
+        User currentUser = BaseContext.getCurrentUser();
+        Long userId = currentUser.getId();
+        QueryWrapper queryWrapper = new QueryWrapper();
+        queryWrapper.eq("team_id", teamId);
+        queryWrapper.eq("user_id", userId);
+        // 没有加入队伍则不支持退出
+        Long count = teamUserMapper.selectCount(queryWrapper);
+        if (count < 1) {
+            throw new BusinessException(ErrorCode.CLIENT_ERROR, "尚未加入该队伍");
+        }
+        Team team = teamMapper.selectById(teamId);
+        if (team == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在");
+        }
+        // 不能退出已过期的队伍
+        if (team.getExpireTime().before(new Date())) {
+            throw new BusinessException(ErrorCode.CLIENT_ERROR, "队伍已过期");
+        }
+        queryWrapper = new QueryWrapper();
+        queryWrapper.eq("team_id", teamId);
+        // 根据id升序排序，越早加入队伍的id越小，只要2条数据（1原队长2新队长）
+        queryWrapper.last("order by id asc limit 2");
+        List<TeamUser> teamUserList = teamUserMapper.selectList(queryWrapper);
+        // 如果队伍只剩下一人（当前登录用户），则直接解散
+        if (teamUserList.size() == 1) {
+            teamMapper.deleteById(teamId);
+            teamUserMapper.delete(queryWrapper);
+        } else {
+            // 如果是队长退出则将队长职位转交给第二加入的用户
+            if (team.getUserId().equals(currentUser.getId())) {
+                TeamUser nextTeamUser = teamUserList.get(1);
+                team.setUserId(nextTeamUser.getUserId());
+                // 将队伍的队长更新为下一个用户
+                int result = teamMapper.updateById(team);
+                if (result < 1) {
+                    throw new BusinessException(ErrorCode.SYSTEM_ERROR, "更新队长失败");
+                }
+                // 将原先队长与队伍的关系删除
+                teamUserMapper.deleteById(teamUserList.get(0).getId());
+            } else {
+                // 不是队长直接删除关系即可
+                queryWrapper = new QueryWrapper();
+                queryWrapper.eq("user_id", userId);
+                teamUserMapper.delete(queryWrapper);
+            }
+        }
+    }
+
+    /**
+     * 解散队伍
+     *
+     * @param teamId
+     */
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void deleteTeam(Long teamId) {
+        Team team = teamMapper.selectById(teamId);
+        User currentUser = BaseContext.getCurrentUser();
+        Long userId = currentUser.getId();
+        if (team == null) {
+            throw new BusinessException(ErrorCode.NULL_ERROR, "队伍不存在");
+        }
+        // 如果不是队长不能解散队伍
+        if (!userId.equals(team.getUserId())) {
+            throw new BusinessException(ErrorCode.NO_PERMISSION_ERROR);
+        }
+        // 过期队伍不支持解散
+        if (team.getExpireTime().before(new Date())) {
+            throw new BusinessException(ErrorCode.CLIENT_ERROR, "队伍已过期");
+        }
+        // 删除队伍
+        int result = teamMapper.deleteById(teamId);
+        if (result < 1) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "解散队伍失败");
+        }
+        // 删除所有用户队伍关系
+        QueryWrapper queryWrapper = new QueryWrapper();
+        queryWrapper.eq("team_id", teamId);
+        result = teamUserMapper.delete(queryWrapper);
+        if (result < 1) {
+            throw new BusinessException(ErrorCode.SYSTEM_ERROR, "解散队伍失败");
+        }
+    }
+
+    /**
+     * 获取自己创建的队伍
+     *
+     * @return
+     */
+    @Override
+    public List<TeamVO> getCreatedTeam() {
+        User currentUser = BaseContext.getCurrentUser();
+        QueryWrapper queryWrapper = new QueryWrapper();
+        queryWrapper.eq("user_id", currentUser.getId());
+        queryWrapper.orderByDesc("expire_time");
+        List<Team> teamList = teamMapper.selectList(queryWrapper);
+        ArrayList<TeamVO> teamVOList = new ArrayList<>();
+        for (Team team : teamList) {
+            QueryWrapper<TeamUser> teamUserQueryWrapper = new QueryWrapper<>();
+            teamUserQueryWrapper.select("user_id");
+            teamUserQueryWrapper.eq("team_id", team.getId());
+            List<TeamUser> teamUsers = teamUserMapper.selectList(teamUserQueryWrapper);
+            TeamVO teamVO = new TeamVO();
+            BeanUtils.copyProperties(team, teamVO);
+            teamVO.setUsers(teamUsers.stream().map(TeamUser::getUserId).toList());
+            teamVOList.add(teamVO);
+        }
+        return teamVOList;
+    }
+
+    /**
+     * 获取已加入的队伍
+     *
+     * @return
+     */
+    @Override
+    public List<TeamVO> getJointedTeam() {
+        User currentUser = BaseContext.getCurrentUser();
+        List<Team> jointedTeam = teamUserMapper.selectJointedTeam(currentUser.getId());
+        ArrayList<TeamVO> teamVOList = new ArrayList<>();
+        for (Team team : jointedTeam) {
+            // 关联查询出所有的加入队伍的用户id
+            QueryWrapper<TeamUser> teamUserQueryWrapper = new QueryWrapper<>();
+            teamUserQueryWrapper.select("user_id");
+            teamUserQueryWrapper.eq("team_id", team.getId());
+            List<TeamUser> teamUsers = teamUserMapper.selectList(teamUserQueryWrapper);
+            TeamVO teamVO = new TeamVO();
+            BeanUtils.copyProperties(team, teamVO);
+            teamVO.setUsers(teamUsers.stream().map(TeamUser::getUserId).toList());
+            teamVOList.add(teamVO);
+        }
+        return teamVOList;
     }
 
 }

@@ -4,14 +4,17 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.haonan.common.BaseResponse;
 import com.haonan.constant.UserConstant;
+import com.haonan.context.BaseContext;
 import com.haonan.exception.BusinessException;
 import com.haonan.exception.ErrorCode;
 import com.haonan.model.dto.*;
 import com.haonan.model.entity.User;
+import com.haonan.model.vo.UserVO;
 import com.haonan.service.UserService;
 import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Null;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -60,7 +63,8 @@ public class UserController {
      */
     @PostMapping("/logout")
     public BaseResponse logout(HttpServletRequest request) {
-        request.removeAttribute(UserConstant.SESSION_KEY);
+        request.getSession().removeAttribute(UserConstant.SESSION_KEY);
+        BaseContext.removeCurrentUser();
         return BaseResponse.success();
     }
 
@@ -72,12 +76,7 @@ public class UserController {
      */
     @GetMapping("/current")
     public BaseResponse<User> getCurrentUser(HttpServletRequest request) {
-        User currentUser = (User) request.getSession().getAttribute(UserConstant.SESSION_KEY);
-        if (currentUser == null) {
-            throw new BusinessException(ErrorCode.USER_NOT_EXIST_ERROR);
-        }
-        // Todo: 检验用户是否合法
-        User user = userService.getById(currentUser.getId());
+        User user = userService.getById(BaseContext.getCurrentUser().getId());
         User safetyUser = userService.getSafetyUser(user);
         return BaseResponse.success(safetyUser);
     }
@@ -85,13 +84,25 @@ public class UserController {
 
     /**
      * 推荐用户
+     *
      * @param userRecommendDto
      * @return
      */
     @GetMapping("/recommend")
-    public BaseResponse<Page> recommendUsers(UserRecommendDto userRecommendDto, HttpServletRequest request) {
-        Page<User> userPage = userService.recommendUsers(userRecommendDto, request);
+    public BaseResponse<Page> recommendUsers(UserRecommendDto userRecommendDto) {
+        Page<User> userPage = userService.recommendUsers(userRecommendDto);
         return BaseResponse.success(userPage);
+    }
+
+    /**
+     * 推荐相似度（根据标签）最匹配的用户
+     *
+     * @return
+     */
+    @GetMapping("/match")
+    public BaseResponse<List<UserVO>> matchUsers(Integer num) {
+        List<UserVO> userVOList = userService.matchUsers(num);
+        return BaseResponse.success(userVOList);
     }
 
     /**

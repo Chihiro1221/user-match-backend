@@ -3,6 +3,7 @@ package com.haonan.handler;
 import com.haonan.common.BaseResponse;
 import com.haonan.exception.BusinessException;
 import com.haonan.exception.ErrorCode;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -14,7 +15,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 public class GlobalExceptionInterceptor {
     @ExceptionHandler(BusinessException.class)
     public BaseResponse exceptionHandler(BusinessException e) {
-        log.error("发生错误：{} - {}", e.getCode(), e.getMessage());
+        log.error("发生错误：{}", e);
         return BaseResponse.error(e.getCode(), e.getMessage());
     }
 

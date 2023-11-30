@@ -11,6 +11,8 @@ import com.haonan.model.entity.User;
 import com.haonan.model.vo.PageVo;
 import com.haonan.model.vo.TeamVO;
 
+import java.util.List;
+
 /**
 * @author haonan
 * @description 针对表【team(队伍表)】的数据库操作Service
@@ -48,4 +50,28 @@ public interface TeamService extends IService<Team> {
      * @param loginUser
      */
     void joinTeam(TeamJoinDto teamJoinDto, User loginUser);
+
+    /**
+     * 退出队伍
+     * @param teamId
+     */
+    void quitTeam(Long teamId);
+
+    /**
+     * 解散队伍
+     * @param teamId
+     */
+    void deleteTeam(Long teamId);
+
+    /**
+     * 获取自己创建的队伍
+     * @return
+     */
+    List<TeamVO> getCreatedTeam();
+
+    /**
+     * 获取已加入的队伍
+     * @return
+     */
+    List<TeamVO> getJointedTeam();
 }

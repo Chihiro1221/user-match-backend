@@ -19,4 +19,14 @@
         join_time,create_time,update_time,
         is_delete
     </sql>
+    <select id="selectJointedTeam" resultType="com.haonan.model.entity.Team">
+        select t.*
+        from team_user tu
+                 join team t
+                      on tu.team_id = t.id and tu.is_delete = 0
+        where tu.user_id = #{id}
+          and now() &lt; t.expire_time
+          and t.is_delete = 0
+          and t.user_id != #{id};
+    </select>
 </mapper>

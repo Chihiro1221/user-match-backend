@@ -6,6 +6,7 @@ import com.haonan.model.dto.UserSearchDto;
 import com.haonan.model.dto.UserUpdateDto;
 import com.haonan.model.entity.User;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.haonan.model.vo.UserVO;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.List;
@@ -77,5 +78,11 @@ public interface UserService extends IService<User> {
      * 推荐用户
      * @return
      */
-    Page<User> recommendUsers(UserRecommendDto userRecommendDto, HttpServletRequest request);
+    Page<User> recommendUsers(UserRecommendDto userRecommendDto);
+
+    /**
+     * 匹配用户
+     * @return
+     */
+    List<UserVO> matchUsers(Integer num);
 }
