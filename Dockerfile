@@ -1,31 +1,26 @@
-FROM eclipse-temurin:17-jdk
-RUN apt-get update \
-  && apt-get install -y ca-certificates curl git --no-install-recommends \
-  && rm -rf /var/lib/apt/lists/*
+# 基于官方提供的Maven OpenJDK镜像作为基础镜像
+FROM maven:3.6.3-openjdk-17 as build
 
-# common for all images
-ENV MAVEN_HOME /usr/share/maven
-
-COPY --from=maven:3.9.5-eclipse-temurin-11 ${MAVEN_HOME} ${MAVEN_HOME}
-COPY --from=maven:3.9.5-eclipse-temurin-11 /usr/local/bin/mvn-entrypoint.sh /usr/local/bin/mvn-entrypoint.sh
-COPY --from=maven:3.9.5-eclipse-temurin-11 /usr/share/maven/ref/settings-docker.xml /usr/share/maven/ref/settings-docker.xml
-
-RUN ln -s ${MAVEN_HOME}/bin/mvn /usr/bin/mvn
-
-ARG MAVEN_VERSION=3.9.5
-ARG USER_HOME_DIR="/root"
-ENV MAVEN_CONFIG "$USER_HOME_DIR/.m2"
-
-ENTRYPOINT ["/usr/local/bin/mvn-entrypoint.sh"]
-
-# Copy local code to the container image.
+# 设置工作目录
 WORKDIR /app
+
+# 将本地Maven项目复制到容器中的/app目录下
 COPY pom.xml .
 COPY src ./src
 
-
-# Build a release artifact.
+# 使用Maven打包
 RUN mvn package -DskipTests
 
+# 开始构建新阶段
+FROM openjdk:17-jdk
+
+# 设置工作目录
+WORKDIR /app
+
+#从前一个阶段复制打包后的jar包到当前阶段
+COPY --from=build /app/target/user-match-0.0.1-SNAPSHOT.jar .
+# 暴露端口
+EXPOSE 8080
+
 # Run the web service on container startup.
-CMD ["java","-jar","/app/target/user-match-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]
+CMD ["java","-jar","/app/user-match-0.0.1-SNAPSHOT.jar", "--spring.profiles.active=prod"]
