@@ -15,14 +15,15 @@ import org.springframework.context.annotation.Configuration;
 public class RedissonConfig {
     private String host;
     private String port;
+    private String password;
+
     @Bean
-    public RedissonClient redissonClient()
-    {
+    public RedissonClient redissonClient() {
         // 1. 创建redisson配置对象
         Config config = new Config();
         String redisUri = String.format("redis://%s:%s", host, port);
         System.out.println(redisUri);
-        config.useSingleServer().setAddress(redisUri).setDatabase(3);
+        config.useSingleServer().setAddress(redisUri).setDatabase(3).setPassword(password);
         // 2. 创建Redisson实例
         RedissonClient redisson = Redisson.create(config);
         return redisson;
